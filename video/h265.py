@@ -18,6 +18,8 @@
 #   HandBrake CLI must be installed https://handbrake.fr/
 #   - In Windows 11, the easiest way to do this is to open a command prompt and run this command:
 #     winget install "HandBrake CLI"
+#   - In MacOS, with Homebrew https://brew.sh/ installed, open a terminal window and run:
+#     brew install handbrake
 #
 #   MKVToolNix must be installed https://mkvtoolnix.download/downloads.html
 #   - No matter which version you use, the binaries must be available in your PATH
