@@ -7,12 +7,12 @@
 # and subtitle tracks. (ie no downmixing or alterations)
 #
 # Usage:
-#   encode.py <resolution> <input_folder> <output_folder>
+#   h265.py <resolution> <input_folder> <output_folder>
 # 
 #   <resolution> must be 720p, 1080p, or 2160p
 #
 # Example:
-#   encode.py 720p "M:\Video Files\The TV Show\Season 01" d:\temp
+#   h265.py 720p "M:\Video Files\The TV Show\Season 01" d:\temp
 #
 # Prerequisites:
 #   HandBrake CLI must be installed https://handbrake.fr/
