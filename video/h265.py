@@ -117,12 +117,14 @@ def merge_tracks(encoded_video, original_file, final_output):
     if tracks_info['subtitles']:
         subtitle_tracks = ",".join(tracks_info['subtitles'])
         command.extend(["--subtitle-tracks", subtitle_tracks])
+    else
+        command.extend(["--no-subtitles"])
 
     # Finally, append the original file which will include only the selected audio and subtitle tracks
     command.append(original_file)
 
     subprocess.run(command, check=True)
-    
+
 def encode_videos(resolution, input_folder, output_folder):
     resolutions = {
         "720p": "1280x720",
