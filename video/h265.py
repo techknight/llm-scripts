@@ -99,11 +99,8 @@ def encode_video(input_path, output_path, video_resolution):
 def merge_tracks(encoded_video, original_file, final_output):
     tracks_info = get_tracks_info(original_file)
 
-    # Exclude the original video track by using negative track IDs in the command.
-    video_track_exclusion = ["--video-tracks", "!"+",".join(tracks_info['video'])]
-
     # Start building the mkvmerge command with the output file and video track exclusion
-    command = ["mkvmerge", "-o", final_output] + video_track_exclusion
+    command = ["mkvmerge", "-o", final_output] + ["--no-video"]
 
     # Add the encoded video
     command.append(encoded_video)
