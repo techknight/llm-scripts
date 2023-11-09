@@ -117,7 +117,7 @@ def merge_tracks(encoded_video, original_file, final_output):
     if tracks_info['subtitles']:
         subtitle_tracks = ",".join(tracks_info['subtitles'])
         command.extend(["--subtitle-tracks", subtitle_tracks])
-    else
+    else:
         command.extend(["--no-subtitles"])
 
     # Finally, append the original file which will include only the selected audio and subtitle tracks
