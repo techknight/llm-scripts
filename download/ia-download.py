@@ -29,6 +29,7 @@ from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 import sys
+import urllib.parse
 
 # Get the URL from the command-line arguments
 if len(sys.argv) < 2:
@@ -55,28 +56,41 @@ download_dir = f'downloaded_{file_type[1:]}s'  # e.g., downloaded_zips or downlo
 if not os.path.exists(download_dir):
     os.makedirs(download_dir)
 
+# Function to sanitize filenames by replacing invalid characters
+def sanitize_filename(filename):
+    invalid_chars = '<>:"/\\|?*'
+    for char in invalid_chars:
+        filename = filename.replace(char, '-')
+    return filename
+
 # Define a function to download a single file with progress bar
 def download_file(file_url):
-    filename = file_url.split('/')[-1]
+    decoded_url = urllib.parse.unquote(file_url)
+    raw_filename = decoded_url.split('/')[-1]
+    filename = sanitize_filename(raw_filename)
+    
     filepath = os.path.join(download_dir, filename)
-    response = requests.get(file_url, stream=True)
     with open(filepath, 'wb') as f:
-        total_size = int(response.headers.get('content-length', 0))
-        block_size = 1024
-        progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True, desc=filename)
-        try:
-            for data in response.iter_content(block_size):
-                if tqdm._instances:
-                    progress_bar.update(len(data))
-                    f.write(data)
-                else:
-                    # Progress bar has been closed by user
-                    break
-        except KeyboardInterrupt:
-            # User pressed the q key to quit
-            progress_bar.close()
-            print('\nDownload interrupted.')
-            sys.exit()
+        download_and_write_file(f, file_url, filename)
+
+def download_and_write_file(file_handle, file_url, filename):
+    response = requests.get(file_url, stream=True)
+    total_size = int(response.headers.get('content-length', 0))
+    block_size = 1024
+    progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True, desc=filename)
+    try:
+        for data in response.iter_content(block_size):
+            if tqdm._instances:
+                progress_bar.update(len(data))
+                file_handle.write(data)
+            else:
+                # Progress bar has been closed by user
+                break
+    except KeyboardInterrupt:
+        # User pressed the q key to quit
+        progress_bar.close()
+        print('\nDownload interrupted.')
+        sys.exit()
 
 # Use multithreading to download the files
 with ThreadPoolExecutor(max_workers=10) as executor:
