@@ -62,6 +62,8 @@ import subprocess
 import sys
 import os
 import json
+from datetime import datetime
+
 
 def get_tracks_info(input_file):
     command = ["mkvmerge", "-J", input_file]
@@ -96,14 +98,11 @@ def encode_video(input_path, output_path, target_height):
     ]
     subprocess.run(command, check=True)
 
-def merge_tracks(encoded_video, original_file, final_output):
+def merge_tracks(encoded_video, original_file, final_output, output_folder):
     tracks_info = get_tracks_info(original_file)
 
-    # Exclude the original video track by using negative track IDs in the command.
-    video_track_exclusion = ["--video-tracks", "!"+",".join(tracks_info['video'])]
-
     # Start building the mkvmerge command with the output file and video track exclusion
-    command = ["mkvmerge", "-o", final_output] + video_track_exclusion
+    command = ["mkvmerge", "-o", final_output] + ["--no-video"]
 
     # Add the encoded video
     command.append(encoded_video)
@@ -117,12 +116,32 @@ def merge_tracks(encoded_video, original_file, final_output):
     if tracks_info['subtitles']:
         subtitle_tracks = ",".join(tracks_info['subtitles'])
         command.extend(["--subtitle-tracks", subtitle_tracks])
+    else:
+        command.extend(["--no-subtitles"])
 
     # Finally, append the original file which will include only the selected audio and subtitle tracks
     command.append(original_file)
 
-    subprocess.run(command, check=True)
-    
+    # Execute the mkvmerge command and capture stderr
+    result = subprocess.run(command, stderr=subprocess.PIPE, text=True)
+
+    # Define the path for the warnings or errors log
+    log_path = os.path.join(output_folder, 'mkvmerge-warnings-errors.log')
+
+    # Get the current date and time in ISO 8601 format
+    current_time = datetime.now().isoformat()
+
+    # If there was a warning (exit status of 1), log it to a file in the output folder
+    if result.returncode == 1:
+        with open(log_path, 'a') as f:
+            f.write(f"{current_time}: Warning encountered while processing file {original_file}:\n")
+            f.write(result.stderr + "\n")
+    # For any other non-zero return code, log the error and raise an exception
+    elif result.returncode != 0:
+        with open(log_path, 'a') as f:
+            f.write(f"{current_time}: Error for file {original_file}:\n{result.stderr}\n")
+        raise subprocess.CalledProcessError(result.returncode, command, output=result.stderr)
+
 def encode_videos(resolution, input_folder, output_folder):
     target_heights = {
         "480p": 480,
@@ -151,7 +170,7 @@ def encode_videos(resolution, input_folder, output_folder):
             encode_video(input_path, temp_output_path, target_height)
 
             print(f"Merging encoded video with original audio/subtitles from {filename}...")
-            merge_tracks(input_path, temp_output_path, final_output_path)
+            merge_tracks(input_path, temp_output_path, final_output_path, output_folder)
 
             os.remove(temp_output_path)
             print(f"Finished processing {filename}.")
