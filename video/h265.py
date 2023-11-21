@@ -9,7 +9,7 @@
 # Usage:
 #   h265.py <resolution> <input_folder> <output_folder>
 # 
-#   <resolution> must be 720p, 1080p, or 2160p
+#   <resolution> must be 480p, 720p, 1080p, or 2160p
 #
 # Example:
 #   h265.py 720p "M:\Video Files\The TV Show\Season 01" d:\temp
@@ -79,7 +79,7 @@ def get_tracks_info(input_file):
 
     return track_ids
 
-def encode_video(input_path, output_path, video_resolution):
+def encode_video(input_path, output_path, target_height):
     command = [
         "HandBrakeCLI",
         "-i", input_path,
@@ -89,8 +89,8 @@ def encode_video(input_path, output_path, video_resolution):
         "--encoder-preset", "slow",
         "-q", "22",
         "--cfr",
-        "--height", video_resolution.split("x")[1],
-        "--width", video_resolution.split("x")[0],
+        "--height", str(target_height),
+        "--keep-display-aspect",  # Ensures the aspect ratio is maintained
         "-a", "none",  # No audio
         "-s", "none",  # No subtitles
     ]
@@ -124,14 +124,15 @@ def merge_tracks(encoded_video, original_file, final_output):
     subprocess.run(command, check=True)
     
 def encode_videos(resolution, input_folder, output_folder):
-    resolutions = {
-        "720p": "1280x720",
-        "1080p": "1920x1080",
-        "2160p": "3840x2160"
+    target_heights = {
+        "480p": 480,
+        "720p": 720,
+        "1080p": 1080,
+        "2160p": 2160
     }
-    video_resolution = resolutions.get(resolution.lower())
-    if not video_resolution:
-        print("Invalid resolution. Choose 720p, 1080p, or 2160p.")
+    target_height = target_heights.get(resolution.lower())
+    if not target_height:
+        print("Invalid resolution. Choose 480p, 720p, 1080p, or 2160p.")
         sys.exit(1)
 
     for filename in os.listdir(input_folder):
@@ -147,7 +148,7 @@ def encode_videos(resolution, input_folder, output_folder):
                 continue
 
             print(f"Encoding video track of {filename}...")
-            encode_video(input_path, temp_output_path, video_resolution)
+            encode_video(input_path, temp_output_path, target_height)
 
             print(f"Merging encoded video with original audio/subtitles from {filename}...")
             merge_tracks(input_path, temp_output_path, final_output_path)
